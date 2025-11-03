@@ -1,0 +1,251 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User Management
+// ============================================
+
+model User {
+  id            String      @id @default(uuid())
+  email         String?     @unique
+  name          String?
+  locale        String      @default("en") // Language preference: "en" or "zh"
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  sessions      Session[]
+  itineraries   Itinerary[]
+  favorites     Favorite[]
+  preferences   UserPreference[]
+
+  @@map("users")
+}
+
+model UserPreference {
+  id          String   @id @default(uuid())
+  userId      String
+  key         String   // e.g., "budget_range", "travel_style", "food_preferences"
+  value       String   // JSON string for complex values
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@map("user_preferences")
+}
+
+// ============================================
+// Session Management
+// ============================================
+
+model Session {
+  id              String    @id @default(uuid())
+  userId          String?
+  locale          String    @default("en")
+  conversationLog Json[]    // Array of message objects {role, content, timestamp}
+  context         Json?     // Current conversation context
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  expiresAt       DateTime? // Session expiration
+
+  // Relations
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ============================================
+// Itinerary Management
+// ============================================
+
+model Itinerary {
+  id              String              @id @default(uuid())
+  userId          String?
+  title           String
+  description     String?
+  locale          String              @default("en")
+  startDate       DateTime
+  endDate         DateTime
+  destination     String              // e.g., "New Zealand", "South Island"
+  travelers       Int                 @default(1)
+  budget          Decimal?            @db.Decimal(10, 2)
+  currency        String              @default("NZD")
+  status          ItineraryStatus     @default(DRAFT)
+  metadata        Json?               // Additional data (weather, traffic, etc.)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Relations
+  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  days            ItineraryDay[]
+
+  @@index([userId])
+  @@index([startDate])
+  @@map("itineraries")
+}
+
+enum ItineraryStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  ARCHIVED
+}
+
+model ItineraryDay {
+  id            String              @id @default(uuid())
+  itineraryId   String
+  dayNumber     Int                 // Day 1, Day 2, etc.
+  date          DateTime
+  title         String?
+  description   String?
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  // Relations
+  itinerary     Itinerary           @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  activities    Activity[]
+
+  @@unique([itineraryId, dayNumber])
+  @@map("itinerary_days")
+}
+
+model Activity {
+  id              String        @id @default(uuid())
+  dayId           String
+  name            String
+  description     String?
+  type            ActivityType
+  startTime       DateTime?
+  endTime         DateTime?
+  duration        Int?          // Duration in minutes
+  location        String?
+  address         String?
+  latitude        Decimal?      @db.Decimal(10, 8)
+  longitude       Decimal?      @db.Decimal(11, 8)
+  cost            Decimal?      @db.Decimal(10, 2)
+  currency        String        @default("NZD")
+  bookingUrl      String?
+  provider        String?       // e.g., "Klook", "GetYourGuide", "Tripadvisor"
+  externalId      String?       // ID from external provider
+  rating          Decimal?      @db.Decimal(3, 2)
+  reviewCount     Int?
+  notes           String?
+  order           Int           @default(0) // Order within the day
+  metadata        Json?         // Additional data (tickets, weather, etc.)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  day             ItineraryDay  @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([dayId])
+  @@map("activities")
+}
+
+enum ActivityType {
+  ATTRACTION
+  RESTAURANT
+  ACCOMMODATION
+  TRANSPORTATION
+  ACTIVITY
+  OTHER
+}
+
+// ============================================
+// Favorites & Bookmarks
+// ============================================
+
+model Favorite {
+  id            String        @id @default(uuid())
+  userId        String
+  type          FavoriteType
+  name          String
+  description   String?
+  location      String?
+  address       String?
+  latitude      Decimal?      @db.Decimal(10, 8)
+  longitude     Decimal?      @db.Decimal(11, 8)
+  externalId    String?       // ID from external provider (Google Places, etc.)
+  provider      String?
+  url           String?
+  imageUrl      String?
+  rating        Decimal?      @db.Decimal(3, 2)
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, externalId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+enum FavoriteType {
+  ATTRACTION
+  RESTAURANT
+  ACCOMMODATION
+  RENTAL_CAR
+}
+
+// ============================================
+// Price Comparison Cache
+// ============================================
+
+model PriceComparison {
+  id              String    @id @default(uuid())
+  attractionName  String
+  attractionId    String?   // External attraction ID
+  provider        String    // e.g., "Klook", "Tiqets", "GetYourGuide"
+  price           Decimal   @db.Decimal(10, 2)
+  currency        String    @default("NZD")
+  url             String
+  availability    Boolean   @default(true)
+  metadata        Json?     // Additional provider-specific data
+  fetchedAt       DateTime  @default(now())
+  expiresAt       DateTime  // Cache expiration
+
+  @@index([attractionId])
+  @@index([expiresAt])
+  @@map("price_comparisons")
+}
+
+// ============================================
+// LLM Usage Tracking (Cost Control)
+// ============================================
+
+model LLMUsage {
+  id            String    @id @default(uuid())
+  provider      String    // "openai", "anthropic"
+  model         String    // "gpt-4o", "claude-3-5-sonnet"
+  operation     String    // "intent", "itinerary", "compare", etc.
+  inputTokens   Int
+  outputTokens  Int
+  totalTokens   Int
+  cost          Decimal?  @db.Decimal(10, 6)
+  latency       Int?      // Latency in ms
+  success       Boolean   @default(true)
+  error         String?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+
+  @@index([provider])
+  @@index([model])
+  @@index([createdAt])
+  @@map("llm_usage")
+}

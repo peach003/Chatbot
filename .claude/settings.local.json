@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(test:*)",
+      "Bash(node:*)",
+      "Bash(npm --version)",
+      "Bash(npx @nestjs/cli@latest new:*)",
+      "Bash(tree:*)",
+      "Bash(npm run build)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma init)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(ping:*)",
+      "Bash(npm run verify)",
+      "Bash(git init:*)",
+      "Bash(git remote add origin https://github.com/peach003/Chatbot.git)",
+      "Bash(git add .)",
+      "Bash(git config:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

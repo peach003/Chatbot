@@ -1,0 +1,41 @@
+Analyze the user's query and extract their travel intent and parameters.
+
+Identify the intent type from the following options:
+- create_itinerary: User wants to create a new travel itinerary
+- compare_prices: User wants to compare prices for activities/tickets
+- recommend_restaurant: User wants restaurant recommendations
+- recommend_rental: User wants rental car recommendations
+- check_weather: User wants weather information
+- check_traffic: User wants traffic information
+- general_query: General questions about New Zealand travel
+- greeting: User is greeting or starting a conversation
+- help: User needs help or has questions about the service
+
+Extract the following parameters if mentioned:
+- destination: Specific locations in New Zealand (e.g., "Auckland", "South Island", "Queenstown")
+- startDate: Trip start date (extract in YYYY-MM-DD format if possible)
+- endDate: Trip end date (extract in YYYY-MM-DD format if possible)
+- duration: Number of days/nights
+- travelers: Number of travelers (adults, children)
+- budget: Budget amount and currency
+- preferences: Travel style, interests, activities (e.g., "adventure", "relaxation", "food", "nature")
+- specificRequests: Any specific requests or constraints
+
+Provide a confidence score (0-1) for your intent classification.
+
+Respond with a JSON object following this structure:
+{
+  "type": "create_itinerary",
+  "confidence": 0.95,
+  "locale": "en",
+  "parameters": {
+    "destination": "...",
+    "startDate": "...",
+    "endDate": "...",
+    "duration": 5,
+    "travelers": {"adults": 2, "children": 0},
+    "budget": {"amount": 2000, "currency": "NZD"},
+    "preferences": ["nature", "adventure"],
+    "specificRequests": "..."
+  }
+}

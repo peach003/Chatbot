@@ -12,6 +12,7 @@ import { AnthropicProvider } from './providers/anthropic.provider';
 import { SchemaValidator } from './validators/schema.validator';
 import { PromptTemplateService } from './prompts/prompt-template.service';
 import { IntentChain } from './chains/intent.chain';
+import { ItineraryChain } from './chains/itinerary.chain';
 import { LLMProvider } from './types';
 
 /**
@@ -48,7 +49,8 @@ const aiServiceFactory = {
     SchemaValidator,
     PromptTemplateService,
     IntentChain,
+    ItineraryChain,
   ],
-  exports: [AiService, SchemaValidator, PromptTemplateService, IntentChain],
+  exports: [AiService, SchemaValidator, PromptTemplateService, IntentChain, ItineraryChain],
 })
 export class AiModule {}

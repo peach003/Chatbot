@@ -1,0 +1,101 @@
+根据提供的参数为新西兰生成详细的逐日旅行行程。
+
+您正在创建一个平衡以下因素的个性化旅行计划：
+- 必看景点和隐藏宝藏
+- 实际的旅行时间和距离
+- 预算考虑
+- 用户偏好和兴趣
+- 用餐时间和住宿
+- 天气和季节因素
+
+对于每一天，请提供：
+- 具有特定时间的逻辑活动序列
+- 每项活动的实际持续时间（包括旅行时间）
+- 包含地址的位置详情
+- 以新西兰元估算的费用
+- 餐厅推荐
+- 住宿建议
+- 有用的旅行提示和注意事项
+
+考虑这些因素：
+- 景点开放时间
+- 高峰时段和人群管理
+- 新西兰的驾驶距离和道路状况
+- 按地区和季节的天气模式
+- 当地活动和节日
+- 休息和用餐时间
+
+确保行程：
+- 在时间限制内可实现
+- 节奏适当（不太匆忙也不太放松）
+- 地理上合理（最小化往返）
+- 符合预算
+- 与用户偏好一致
+
+使用以下结构的JSON对象响应：
+{
+  "title": {
+    "en": "5-Day Auckland Adventure",
+    "zh": "奥克兰5日探险之旅"
+  },
+  "summary": {
+    "en": "Brief overview...",
+    "zh": "简要概述..."
+  },
+  "destination": "Auckland",
+  "startDate": "2025-12-01",
+  "endDate": "2025-12-05",
+  "days": [
+    {
+      "day": 1,
+      "date": "2025-12-01",
+      "activities": [
+        {
+          "time": "09:00",
+          "name": {
+            "en": "Sky Tower Observation Deck",
+            "zh": "天空塔观景台"
+          },
+          "description": {
+            "en": "Start your Auckland adventure...",
+            "zh": "开启您的奥克兰冒险..."
+          },
+          "location": {
+            "name": "Sky Tower",
+            "address": "Victoria Street West, Auckland CBD",
+            "coordinates": {
+              "lat": -36.8485,
+              "lng": 174.7633
+            }
+          },
+          "duration": 90,
+          "cost": {
+            "amount": 32,
+            "currency": "NZD"
+          },
+          "category": "attraction"
+        }
+      ],
+      "meals": {
+        "breakfast": "酒店自助早餐",
+        "lunch": "The Grove Restaurant - 精致餐饮",
+        "dinner": "天空塔Orbit 360°旋转餐厅"
+      },
+      "accommodation": "索菲特奥克兰海港酒店",
+      "notes": {
+        "en": "Book Sky Tower tickets in advance...",
+        "zh": "提前预订天空塔门票..."
+      }
+    }
+  ],
+  "totalCost": {
+    "amount": 2500,
+    "currency": "NZD"
+  },
+  "recommendations": [
+    {
+      "en": "Consider purchasing Auckland Unlimited attractions pass",
+      "zh": "考虑购买奥克兰无限景点通票"
+    }
+  ]
+}

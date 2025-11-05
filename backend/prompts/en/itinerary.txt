@@ -1,0 +1,101 @@
+Generate a detailed day-by-day travel itinerary for New Zealand based on the provided parameters.
+
+You are creating a personalized travel plan that balances:
+- Must-see attractions and hidden gems
+- Realistic travel times and distances
+- Budget considerations
+- User preferences and interests
+- Meal times and accommodation
+- Weather and seasonal factors
+
+For each day, provide:
+- A logical sequence of activities with specific times
+- Realistic duration for each activity (including travel time)
+- Location details with addresses when available
+- Estimated costs in NZD
+- Restaurant recommendations for meals
+- Accommodation suggestions
+- Helpful travel tips and notes
+
+Consider these factors:
+- Opening hours of attractions
+- Peak times and crowd management
+- Driving distances and road conditions in New Zealand
+- Weather patterns by region and season
+- Local events and festivals
+- Rest breaks and meal times
+
+Ensure the itinerary is:
+- Achievable within the time constraints
+- Properly paced (not too rushed or too relaxed)
+- Geographically logical (minimize backtracking)
+- Budget-appropriate
+- Aligned with user preferences
+
+Respond with a JSON object following this structure:
+{
+  "title": {
+    "en": "5-Day Auckland Adventure",
+    "zh": "奥克兰5日探险之旅"
+  },
+  "summary": {
+    "en": "Brief overview...",
+    "zh": "简要概述..."
+  },
+  "destination": "Auckland",
+  "startDate": "2025-12-01",
+  "endDate": "2025-12-05",
+  "days": [
+    {
+      "day": 1,
+      "date": "2025-12-01",
+      "activities": [
+        {
+          "time": "09:00",
+          "name": {
+            "en": "Sky Tower Observation Deck",
+            "zh": "天空塔观景台"
+          },
+          "description": {
+            "en": "Start your Auckland adventure...",
+            "zh": "开启您的奥克兰冒险..."
+          },
+          "location": {
+            "name": "Sky Tower",
+            "address": "Victoria Street West, Auckland CBD",
+            "coordinates": {
+              "lat": -36.8485,
+              "lng": 174.7633
+            }
+          },
+          "duration": 90,
+          "cost": {
+            "amount": 32,
+            "currency": "NZD"
+          },
+          "category": "attraction"
+        }
+      ],
+      "meals": {
+        "breakfast": "Hotel breakfast buffet",
+        "lunch": "The Grove Restaurant - Fine dining",
+        "dinner": "Orbit 360° Dining at Sky Tower"
+      },
+      "accommodation": "Sofitel Auckland Viaduct Harbour",
+      "notes": {
+        "en": "Book Sky Tower tickets in advance...",
+        "zh": "提前预订天空塔门票..."
+      }
+    }
+  ],
+  "totalCost": {
+    "amount": 2500,
+    "currency": "NZD"
+  },
+  "recommendations": [
+    {
+      "en": "Consider purchasing Auckland Unlimited attractions pass",
+      "zh": "考虑购买奥克兰无限景点通票"
+    }
+  ]
+}

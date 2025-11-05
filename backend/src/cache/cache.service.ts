@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { ConfigService } from '../common/config/config.service';
 
 /**
  * Cache service wrapper with typed methods and TTL presets
@@ -9,15 +10,10 @@ import { Cache } from 'cache-manager';
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
 
-  // TTL presets (in seconds)
-  private readonly TTL = {
-    DEFAULT: parseInt(process.env.CACHE_TTL_DEFAULT || '3600', 10),
-    WEATHER: parseInt(process.env.CACHE_TTL_WEATHER || '1800', 10), // 30 min
-    PLACES: parseInt(process.env.CACHE_TTL_PLACES || '86400', 10),  // 24 hours
-    PRICES: parseInt(process.env.CACHE_TTL_PRICES || '7200', 10),   // 2 hours
-  };
-
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private configService: ConfigService,
+  ) {}
 
   /**
    * Get value from cache
@@ -42,9 +38,12 @@ export class CacheService {
    */
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
-      const ttlMs = (ttl || this.TTL.DEFAULT) * 1000;
+      const ttlMs =
+        (ttl || this.configService.cacheTtlDefault) * 1000;
       await this.cacheManager.set(key, value, ttlMs);
-      this.logger.debug(`Cache set: ${key} (TTL: ${ttl || this.TTL.DEFAULT}s)`);
+      this.logger.debug(
+        `Cache set: ${key} (TTL: ${ttl || this.configService.cacheTtlDefault}s)`,
+      );
     } catch (error) {
       this.logger.error(`Error setting cache key ${key}:`, error);
     }
@@ -97,21 +96,21 @@ export class CacheService {
    * Cache with weather-specific TTL
    */
   async setWeather<T>(key: string, value: T): Promise<void> {
-    return this.set(key, value, this.TTL.WEATHER);
+    return this.set(key, value, this.configService.cacheTtlWeather);
   }
 
   /**
    * Cache with places-specific TTL
    */
   async setPlaces<T>(key: string, value: T): Promise<void> {
-    return this.set(key, value, this.TTL.PLACES);
+    return this.set(key, value, this.configService.cacheTtlPlaces);
   }
 
   /**
    * Cache with prices-specific TTL
    */
   async setPrices<T>(key: string, value: T): Promise<void> {
-    return this.set(key, value, this.TTL.PRICES);
+    return this.set(key, value, this.configService.cacheTtlPrices);
   }
 
   /**
@@ -124,7 +123,11 @@ export class CacheService {
   /**
    * Cache decorator-friendly method
    */
-  async wrap<T>(key: string, factory: () => Promise<T>, ttl?: number): Promise<T> {
+  async wrap<T>(
+    key: string,
+    factory: () => Promise<T>,
+    ttl?: number,
+  ): Promise<T> {
     return this.cacheManager.wrap(key, factory, ttl ? ttl * 1000 : undefined);
   }
 }

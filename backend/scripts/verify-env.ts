@@ -1,141 +1,121 @@
-import * as fs from 'fs';
+#!/usr/bin/env ts-node
+
+/**
+ * Environment Verification Script
+ * Validates that all required environment variables are set
+ */
+
+import 'reflect-metadata';
+import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { validate, EnvironmentVariables } from '../src/common/config/env.validation';
 
-interface EnvCheck {
-  key: string;
-  required: boolean;
-  description: string;
-}
+// Load environment variables
+const nodeEnv = process.env.NODE_ENV || 'development';
+const envFile = `.env.${nodeEnv}`;
+const envPath = path.resolve(__dirname, '..', envFile);
 
-const REQUIRED_ENV_VARS: EnvCheck[] = [
-  { key: 'DATABASE_URL', required: true, description: 'PostgreSQL connection string' },
-  { key: 'REDIS_URL', required: true, description: 'Redis connection string' },
-  { key: 'NODE_ENV', required: false, description: 'Environment (development/production)' },
-  { key: 'BACKEND_PORT', required: false, description: 'Backend server port' },
-  { key: 'BACKEND_URL', required: false, description: 'Backend base URL' },
-  { key: 'OPENAI_API_KEY', required: false, description: 'OpenAI API key' },
-  { key: 'CACHE_TTL_DEFAULT', required: false, description: 'Default cache TTL' },
-];
+console.log('🔍 Environment Verification');
+console.log('==========================');
+console.log(`Environment: ${nodeEnv}`);
+console.log(`Loading: ${envFile}`);
+console.log('');
 
-function checkEnvFile(): boolean {
-  const envPath = path.join(__dirname, '..', '..', '.env');
-  if (!fs.existsSync(envPath)) {
-    console.error('❌ .env file not found');
-    return false;
-  }
-  console.log('✅ .env file exists');
-  return true;
-}
+// Load .env file
+dotenv.config({ path: envPath });
 
-function checkEnvVariables(): boolean {
-  let allValid = true;
-  console.log('\n📋 Checking environment variables:\n');
+// Also try loading .env as fallback
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
-  for (const check of REQUIRED_ENV_VARS) {
-    const value = process.env[check.key];
-    const exists = value !== undefined && value !== '';
+try {
+  // Validate environment variables
+  const config = validate(process.env);
 
-    if (check.required && !exists) {
-      console.log(`❌ ${check.key} (REQUIRED) - ${check.description}`);
-      allValid = false;
-    } else if (exists) {
-      const maskedValue = check.key.includes('KEY') || check.key.includes('PASSWORD') || check.key.includes('URL')
-        ? value.substring(0, 20) + '...'
-        : value;
-      console.log(`✅ ${check.key} - ${maskedValue}`);
-    } else {
-      console.log(`⚠️  ${check.key} (optional) - Not set`);
-    }
-  }
+  console.log('✅ Environment validation passed!\n');
 
-  return allValid;
-}
+  // Display configuration summary
+  console.log('📊 Configuration Summary:');
+  console.log('------------------------');
+  console.log(`Node Environment: ${config.NODE_ENV}`);
+  console.log(`Backend URL: ${config.BACKEND_URL}`);
+  console.log(`Frontend URL: ${config.FRONTEND_URL}`);
+  console.log(`Database URL: ${config.DATABASE_URL?.replace(/:[^:@]+@/, ':****@')}`);
+  console.log(`Redis URL: ${config.REDIS_URL?.replace(/:[^:@]+@/, ':****@')}`);
+  console.log(`Log Level: ${config.LOG_LEVEL}`);
+  console.log('');
 
-function checkDirectories(): boolean {
-  const dirs = [
-    'src/ai',
-    'src/cache',
-    'src/common',
-    'src/data',
-    'src/itinerary',
-    'src/proxy',
-    'src/user',
-    'src/weather',
-    'prisma',
-  ];
+  // Check API keys
+  console.log('🔑 API Keys Status:');
+  console.log('------------------');
+  checkApiKey('OpenAI', config.OPENAI_API_KEY);
+  checkApiKey('Anthropic', config.ANTHROPIC_API_KEY);
+  checkApiKey('Google Places', config.GOOGLE_PLACES_API_KEY);
+  checkApiKey('Tripadvisor', config.TRIPADVISOR_API_KEY);
+  checkApiKey('Klook', config.KLOOK_API_KEY);
+  checkApiKey('Tiqets', config.TIQETS_API_KEY);
+  checkApiKey('GetYourGuide', config.GETYOURGUIDE_API_KEY);
+  checkApiKey('Rentalcars', config.RENTALCARS_API_KEY);
+  checkApiKey('MetService', config.METSERVICE_API_KEY);
+  checkApiKey('NZTA', config.NZTA_API_KEY);
+  console.log('');
 
-  let allExist = true;
-  console.log('\n📂 Checking directory structure:\n');
+  // Check secrets
+  console.log('🔐 Security Configuration:');
+  console.log('-------------------------');
+  checkSecret('JWT Secret', config.JWT_SECRET);
+  checkSecret('Session Secret', config.SESSION_SECRET);
+  console.log('');
 
-  for (const dir of dirs) {
-    const dirPath = path.join(__dirname, '..', '..', dir);
-    if (fs.existsSync(dirPath)) {
-      console.log(`✅ ${dir}/`);
-    } else {
-      console.log(`❌ ${dir}/ - Missing`);
-      allExist = false;
-    }
-  }
+  // Check cache configuration
+  console.log('⚡ Cache Configuration:');
+  console.log('----------------------');
+  console.log(`Default TTL: ${config.CACHE_TTL_DEFAULT}s`);
+  console.log(`Weather TTL: ${config.CACHE_TTL_WEATHER}s`);
+  console.log(`Places TTL: ${config.CACHE_TTL_PLACES}s`);
+  console.log(`Prices TTL: ${config.CACHE_TTL_PRICES}s`);
+  console.log('');
 
-  return allExist;
-}
+  // Check rate limiting
+  console.log('🚦 Rate Limiting:');
+  console.log('----------------');
+  console.log(`API Rate Limit: ${config.RATE_LIMIT_MAX} req/${config.RATE_LIMIT_TTL}s`);
+  console.log(`LLM Rate Limit: ${config.LLM_RATE_LIMIT_MAX} req/${config.LLM_RATE_LIMIT_TTL}s`);
+  console.log('');
 
-function checkPrismaSetup(): boolean {
-  console.log('\n🗄️  Checking Prisma setup:\n');
-
-  const schemaPath = path.join(__dirname, '..', '..', 'prisma', 'schema.prisma');
-  const clientPath = path.join(__dirname, '..', '..', 'node_modules', '@prisma', 'client');
-
-  const schemaExists = fs.existsSync(schemaPath);
-  const clientExists = fs.existsSync(clientPath);
-
-  if (schemaExists) {
-    console.log('✅ Prisma schema exists');
-  } else {
-    console.log('❌ Prisma schema missing');
-  }
-
-  if (clientExists) {
-    console.log('✅ Prisma Client generated');
-  } else {
-    console.log('❌ Prisma Client not generated');
-  }
-
-  return schemaExists && clientExists;
-}
-
-async function main() {
-  console.log('🔍 SmartNZ Environment Verification\n');
-  console.log('═'.repeat(50));
-
-  // Load .env file
-  require('dotenv').config();
-
-  const checks = [
-    checkEnvFile(),
-    checkEnvVariables(),
-    checkDirectories(),
-    checkPrismaSetup(),
-  ];
-
-  console.log('\n' + '═'.repeat(50));
-
-  const allPassed = checks.every(check => check);
-
-  if (allPassed) {
-    console.log('\n✅ All checks passed! Environment is ready.\n');
-    process.exit(0);
-  } else {
-    console.log('\n❌ Some checks failed. Please review the errors above.\n');
-    console.log('💡 Tips:');
-    console.log('   - Copy .env.example to .env and fill in values');
-    console.log('   - Run: npm run db:generate');
-    console.log('   - Check the setup documentation\n');
-    process.exit(1);
-  }
-}
-
-main().catch((error) => {
-  console.error('Error running verification:', error);
+  console.log('✅ All checks passed! Environment is properly configured.');
+  process.exit(0);
+} catch (error) {
+  console.error('❌ Environment validation failed!');
+  console.error('');
+  console.error(error instanceof Error ? error.message : error);
+  console.error('');
+  console.error('Please check your .env file and ensure all required variables are set.');
   process.exit(1);
-});
+}
+
+function checkApiKey(name: string, value: string | undefined): void {
+  if (value && value.length > 0) {
+    console.log(`  ✅ ${name}: Set (${value.substring(0, 10)}...)`);
+  } else {
+    console.log(`  ⚠️  ${name}: Not set (optional for development)`);
+  }
+}
+
+function checkSecret(name: string, value: string | undefined): void {
+  if (value && value.length > 0) {
+    const isWeak =
+      value.includes('dev-') ||
+      value.includes('staging-') ||
+      value.length < 32;
+
+    if (process.env.NODE_ENV === 'production' && isWeak) {
+      console.log(
+        `  ⚠️  ${name}: Set but WEAK! Generate a strong secret for production`,
+      );
+    } else {
+      console.log(`  ✅ ${name}: Set (length: ${value.length})`);
+    }
+  } else {
+    console.log(`  ❌ ${name}: Not set (REQUIRED for production)`);
+  }
+}
